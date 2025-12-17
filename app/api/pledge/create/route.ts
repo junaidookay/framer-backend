@@ -6,6 +6,7 @@ export const runtime = "nodejs"
 
 function corsHeaders(req: Request): HeadersInit {
   const origin = req.headers.get("origin") ?? ""
+  const requestHeaders = req.headers.get("access-control-request-headers")
   const allowed = new Set([
     "https://www.sixplusone.com",
     "https://sixplusone.com",
@@ -18,8 +19,9 @@ function corsHeaders(req: Request): HeadersInit {
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    Vary: "Origin",
+    "Access-Control-Allow-Headers": requestHeaders ?? "Content-Type",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin, Access-Control-Request-Headers",
   }
 }
 
@@ -157,13 +159,9 @@ export async function POST(req: Request) {
       { url: session.url },
       { status: 200, headers: corsHeaders(req) }
     )
-  } catch (e) {
-    const message =
-      typeof e === "object" && e != null && "message" in e
-        ? String((e as { message: unknown }).message)
-        : "Request failed"
+  } catch {
     return NextResponse.json(
-      { error: message },
+      { error: "Unable to create pledge checkout session" },
       { status: 500, headers: corsHeaders(req) }
     )
   }
