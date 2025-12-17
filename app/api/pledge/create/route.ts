@@ -172,6 +172,12 @@ export async function POST(req: Request) {
     } else if (rawMessage.includes("Missing STRIPE_SECRET_KEY")) {
       message = "Backend is missing Stripe environment variables"
     } else if (
+      rawMessage.toLowerCase().includes("invalid api key") ||
+      rawMessage.toLowerCase().includes("api key provided") ||
+      rawMessage.toLowerCase().includes("secret key")
+    ) {
+      message = "Backend Stripe secret key is invalid"
+    } else if (
       rawMessage.toLowerCase().includes("invalid url") ||
       rawMessage.toLowerCase().includes("success_url") ||
       rawMessage.toLowerCase().includes("cancel_url")
