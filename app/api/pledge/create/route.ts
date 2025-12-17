@@ -140,6 +140,8 @@ export async function POST(req: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "setup",
+
+      payment_method_types: ["card"],
       customer: customer.id,
       success_url: process.env.SUCCESS_URL as string,
       cancel_url: process.env.CANCEL_URL as string,
@@ -177,6 +179,8 @@ export async function POST(req: Request) {
       rawMessage.toLowerCase().includes("secret key")
     ) {
       message = "Backend Stripe secret key is invalid"
+    } else if (rawMessage.toLowerCase().includes("payment_method_types")) {
+      message = "Stripe setup session requires payment_method_types"
     } else if (
       rawMessage.toLowerCase().includes("invalid url") ||
       rawMessage.toLowerCase().includes("success_url") ||
