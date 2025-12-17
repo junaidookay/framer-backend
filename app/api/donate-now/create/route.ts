@@ -11,7 +11,6 @@ type Body = {
 
 export async function POST(req: Request) {
   try {
-    const stripe = getStripe()
     const body = (await req.json()) as Partial<Body>
     const amount = Number(body.amount)
 
@@ -23,6 +22,8 @@ export async function POST(req: Request) {
     }
 
     const amountCents = Math.round(amount * 100)
+
+    const stripe = getStripe()
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -43,7 +44,11 @@ export async function POST(req: Request) {
     })
 
     return NextResponse.json({ url: session.url }, { status: 200 })
-  } catch {
-    return NextResponse.json({ error: "Request failed" }, { status: 500 })
+  } catch (e) {
+    const message =
+      typeof e === "object" && e != null && "message" in e
+        ? String((e as { message: unknown }).message)
+        : "Request failed"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

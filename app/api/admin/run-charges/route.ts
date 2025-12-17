@@ -30,8 +30,6 @@ function computeAmountCents(params: {
 
 export async function POST(req: Request) {
   try {
-    const stripe = getStripe()
-    const supabaseAdmin = getSupabaseAdmin()
     const body = (await req.json()) as Partial<Body>
     if (body.password !== process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -41,6 +39,8 @@ export async function POST(req: Request) {
     if (!campaignId) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     const { data: campaign, error: campaignError } = await supabaseAdmin
       .from("campaigns")
@@ -58,6 +58,8 @@ export async function POST(req: Request) {
         { status: 400 }
       )
     }
+
+    const stripe = getStripe()
 
     const finalViews = Number(campaign.final_views)
     const viewsCap =
@@ -195,7 +197,12 @@ export async function POST(req: Request) {
       { ok: true, charged, skipped, failed, requiresAction },
       { status: 200 }
     )
-  } catch {
-    return NextResponse.json({ error: "Request failed" }, { status: 500 })
+  } catch (e) {
+    const message =
+      typeof e === "object" && e != null && "message" in e
+        ? String((e as { message: unknown }).message)
+        : "Request failed"
+
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

@@ -11,7 +11,6 @@ type Body = {
 
 export async function POST(req: Request) {
   try {
-    const supabaseAdmin = getSupabaseAdmin()
     const body = (await req.json()) as Partial<Body>
     if (body.password !== process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -23,6 +22,8 @@ export async function POST(req: Request) {
     if (!campaignId || !Number.isFinite(finalViews) || finalViews < 0) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 })
     }
+
+    const supabaseAdmin = getSupabaseAdmin()
 
     const { data: campaign, error: campaignError } = await supabaseAdmin
       .from("campaigns")
@@ -54,7 +55,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ ok: true }, { status: 200 })
-  } catch {
-    return NextResponse.json({ error: "Request failed" }, { status: 500 })
+  } catch (e) {
+    const message =
+      typeof e === "object" && e != null && "message" in e
+        ? String((e as { message: unknown }).message)
+        : "Request failed"
+
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

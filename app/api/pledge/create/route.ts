@@ -18,8 +18,6 @@ function isNonEmptyString(value: unknown): value is string {
 
 export async function POST(req: Request) {
   try {
-    const stripe = getStripe()
-    const supabaseAdmin = getSupabaseAdmin()
     const body = (await req.json()) as Partial<Body>
 
     if (
@@ -80,6 +78,8 @@ export async function POST(req: Request) {
     const ratePer1000Cents = Math.round(ratePer1000 * 100)
     const capAmountCents = capAmount == null ? null : Math.round(capAmount * 100)
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     const { data: pledge, error: pledgeError } = await supabaseAdmin
       .from("pledges")
       .insert({
@@ -101,6 +101,8 @@ export async function POST(req: Request) {
         { status: 500 }
       )
     }
+
+    const stripe = getStripe()
 
     const customer = await stripe.customers.create({
       email: body.email,
@@ -126,7 +128,11 @@ export async function POST(req: Request) {
       .eq("id", pledge.id)
 
     return NextResponse.json({ url: session.url }, { status: 200 })
-  } catch {
-    return NextResponse.json({ error: "Request failed" }, { status: 500 })
+  } catch (e) {
+    const message =
+      typeof e === "object" && e != null && "message" in e
+        ? String((e as { message: unknown }).message)
+        : "Request failed"
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
