@@ -53,6 +53,8 @@ export async function POST(req: Request) {
       }
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
+
     const { data: campaign, error: campaignError } = await supabaseAdmin
       .from("campaigns")
       .select("id, views_cap, status")
@@ -77,8 +79,6 @@ export async function POST(req: Request) {
 
     const ratePer1000Cents = Math.round(ratePer1000 * 100)
     const capAmountCents = capAmount == null ? null : Math.round(capAmount * 100)
-
-    const supabaseAdmin = getSupabaseAdmin()
 
     const { data: pledge, error: pledgeError } = await supabaseAdmin
       .from("pledges")
