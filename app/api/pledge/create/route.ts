@@ -159,9 +159,28 @@ export async function POST(req: Request) {
       { url: session.url },
       { status: 200, headers: corsHeaders(req) }
     )
-  } catch {
+  } catch (e) {
+    const rawMessage =
+      typeof e === "object" && e != null && "message" in e
+        ? String((e as { message: unknown }).message)
+        : "Request failed"
+
+    let message = "Unable to create pledge checkout session"
+
+    if (rawMessage.includes("Missing SUPABASE_URL")) {
+      message = "Backend is missing Supabase environment variables"
+    } else if (rawMessage.includes("Missing STRIPE_SECRET_KEY")) {
+      message = "Backend is missing Stripe environment variables"
+    } else if (
+      rawMessage.toLowerCase().includes("invalid url") ||
+      rawMessage.toLowerCase().includes("success_url") ||
+      rawMessage.toLowerCase().includes("cancel_url")
+    ) {
+      message = "Backend has invalid SUCCESS_URL or CANCEL_URL"
+    }
+
     return NextResponse.json(
-      { error: "Unable to create pledge checkout session" },
+      { error: message },
       { status: 500, headers: corsHeaders(req) }
     )
   }
