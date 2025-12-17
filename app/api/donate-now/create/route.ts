@@ -3,6 +3,29 @@ import { getStripe } from "@/src/lib/stripe"
 
 export const runtime = "nodejs"
 
+function corsHeaders(req: Request): HeadersInit {
+  const origin = req.headers.get("origin") ?? ""
+  const allowed = new Set([
+    "https://www.sixplusone.com",
+    "https://sixplusone.com",
+    "http://localhost:3000",
+    "http://localhost:5173",
+  ])
+
+  const allowOrigin = allowed.has(origin) ? origin : "https://www.sixplusone.com"
+
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    Vary: "Origin",
+  }
+}
+
+export async function OPTIONS(req: Request) {
+  return new NextResponse(null, { status: 204, headers: corsHeaders(req) })
+}
+
 type Body = {
   amount: number
   name?: string
@@ -17,7 +40,7 @@ export async function POST(req: Request) {
     if (!Number.isFinite(amount) || amount < 1) {
       return NextResponse.json(
         { error: "Minimum donation is $1" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders(req) }
       )
     }
 
@@ -43,12 +66,18 @@ export async function POST(req: Request) {
       metadata: { flow: "donate_now" },
     })
 
-    return NextResponse.json({ url: session.url }, { status: 200 })
+    return NextResponse.json(
+      { url: session.url },
+      { status: 200, headers: corsHeaders(req) }
+    )
   } catch (e) {
     const message =
       typeof e === "object" && e != null && "message" in e
         ? String((e as { message: unknown }).message)
         : "Request failed"
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json(
+      { error: message },
+      { status: 500, headers: corsHeaders(req) }
+    )
   }
 }
