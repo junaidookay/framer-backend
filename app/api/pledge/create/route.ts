@@ -223,6 +223,13 @@ export async function POST(req: Request) {
           campaign_id: body.campaign_id,
           flow: "pledge_setup",
         },
+        setup_intent_data: {
+          metadata: {
+            pledge_id: pledge.id,
+            campaign_id: body.campaign_id,
+            flow: "pledge_setup",
+          },
+        },
       })
     } catch (e) {
       const rawMessage =
