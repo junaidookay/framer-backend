@@ -45,6 +45,19 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
 }
 
+function withCheckoutSessionId(successUrl: string): string {
+  try {
+    const url = new URL(successUrl)
+    if (url.searchParams.get("session_id") === "{CHECKOUT_SESSION_ID}") return successUrl
+    url.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}")
+    return url.toString()
+  } catch {
+    const joiner = successUrl.includes("?") ? "&" : "?"
+    if (successUrl.includes("session_id={CHECKOUT_SESSION_ID}")) return successUrl
+    return `${successUrl}${joiner}session_id={CHECKOUT_SESSION_ID}`
+  }
+}
+
 export async function POST(req: Request) {
   const requestId = crypto.randomUUID()
   try {
@@ -195,12 +208,16 @@ export async function POST(req: Request) {
 
     let session: Stripe.Checkout.Session
     try {
+      const successUrl = process.env.SUCCESS_URL as string
+      const cancelUrl = process.env.CANCEL_URL as string
+      const successUrlWithSessionId = withCheckoutSessionId(successUrl)
+
       session = await stripe.checkout.sessions.create({
         mode: "setup",
         payment_method_types: ["card"],
         customer: customer.id,
-        success_url: process.env.SUCCESS_URL as string,
-        cancel_url: process.env.CANCEL_URL as string,
+        success_url: successUrlWithSessionId,
+        cancel_url: cancelUrl,
         metadata: {
           pledge_id: pledge.id,
           campaign_id: body.campaign_id,
