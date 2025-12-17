@@ -46,16 +46,14 @@ function isNonEmptyString(value: unknown): value is string {
 }
 
 function withCheckoutSessionId(successUrl: string): string {
-  try {
-    const url = new URL(successUrl)
-    if (url.searchParams.get("session_id") === "{CHECKOUT_SESSION_ID}") return successUrl
-    url.searchParams.set("session_id", "{CHECKOUT_SESSION_ID}")
-    return url.toString()
-  } catch {
-    const joiner = successUrl.includes("?") ? "&" : "?"
-    if (successUrl.includes("session_id={CHECKOUT_SESSION_ID}")) return successUrl
-    return `${successUrl}${joiner}session_id={CHECKOUT_SESSION_ID}`
-  }
+  const placeholder = "{CHECKOUT_SESSION_ID}"
+
+  const hasSessionId = /([?&])session_id=/.test(successUrl)
+  const base = hasSessionId
+    ? successUrl.replace(/([?&]session_id=)([^&]*)/, `$1${placeholder}`)
+    : `${successUrl}${successUrl.includes("?") ? "&" : "?"}session_id=${placeholder}`
+
+  return base.replace(/%7B/gi, "{").replace(/%7D/gi, "}")
 }
 
 export async function POST(req: Request) {
