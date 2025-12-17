@@ -31,7 +31,17 @@ export async function POST(req: Request) {
       .eq("id", campaignId)
       .single()
 
-    if (campaignError || !campaign) {
+    if (campaignError) {
+      const status = campaignError.code === "PGRST116" ? 404 : 500
+      const message =
+        campaignError.code === "PGRST116"
+          ? "Campaign not found"
+          : campaignError.message
+
+      return NextResponse.json({ error: message }, { status })
+    }
+
+    if (!campaign) {
       return NextResponse.json({ error: "Campaign not found" }, { status: 404 })
     }
 
